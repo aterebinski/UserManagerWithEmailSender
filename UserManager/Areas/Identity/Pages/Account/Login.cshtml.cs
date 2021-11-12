@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using UserManager.Models;
+using System.Net.Mail;
 
 namespace UserManager.Areas.Identity.Pages.Account
 {
@@ -43,8 +44,10 @@ namespace UserManager.Areas.Identity.Pages.Account
 
         public class InputModel
         {
+            
+
             [Required]
-            [EmailAddress]
+            [Display(Name = "Username/Email")]
             public string Email { get; set; }
 
             [Required]
@@ -80,9 +83,18 @@ namespace UserManager.Areas.Identity.Pages.Account
         
             if (ModelState.IsValid)
             {
+                string userName = Input.Email;
+
+                if (isValidEmailAddress(userName))
+                {
+                    var u = await _userManager.FindByEmailAsync(userName);
+                    userName = u.UserName;
+
+                }
+
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
@@ -106,6 +118,19 @@ namespace UserManager.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
+        }
+
+        public bool isValidEmailAddress(string email)
+        {
+            try
+            {
+                MailAddress m = new MailAddress(email);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
