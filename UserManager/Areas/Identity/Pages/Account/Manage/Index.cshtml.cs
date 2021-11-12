@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -105,7 +107,6 @@ namespace UserManager.Areas.Identity.Pages.Account.Manage
 
             var firstName = user.FirstName;
             var lastName = user.LastName;
-            //var profilePicture = user.ProfilePicture;
 
             if (Input.FirstName != firstName)
             {
@@ -116,6 +117,17 @@ namespace UserManager.Areas.Identity.Pages.Account.Manage
             if (lastName != Input.LastName)
             {
                 user.LastName = Input.LastName;
+                await _userManager.UpdateAsync(user);
+            }
+
+            if (Request.Form.Files.Count > 0)
+            {
+                IFormFile file = Request.Form.Files.FirstOrDefault();
+                using (var datastream = new MemoryStream())
+                {
+                    await file.CopyToAsync(datastream);
+                    user.ProfilePicture = datastream.ToArray();
+                }
                 await _userManager.UpdateAsync(user);
             }
 
